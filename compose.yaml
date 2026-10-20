@@ -1,0 +1,16 @@
+services:
+  menuplanning:
+    image: ${APP_IMAGE:-menuplanning:latest}
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3080}:3000"
+    environment:
+      DB_HOST: ${DB_HOST:?Set DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:?Set DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-menuplanning}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "1"
+      TZ: Europe/Brussels
