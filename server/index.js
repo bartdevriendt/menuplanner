@@ -5,10 +5,13 @@ import mysql from 'mysql2/promise';
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { menu, validDate } from './domain.js';
+import {updateShopping} from './shopping.js';
 const scrypt = promisify(scryptCallback);
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) throw new Error('SESSION_SECRET moet minimaal 32 tekens bevatten.');
 const pool = mysql.createPool({host:process.env.DB_HOST,port:Number(process.env.DB_PORT || 3306),user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_NAME,connectionLimit:10,charset:'utf8mb4'});
 for (const sql of [
+  'CREATE TABLE IF NOT EXISTS mp_shopping (id TINYINT PRIMARY KEY, data JSON NOT NULL)',
+  `INSERT IGNORE INTO mp_shopping (id,data) VALUES (1,'{"shops":[],"products":[],"defaultShopId":null}')`,
   'CREATE TABLE IF NOT EXISTS mp_account (id TINYINT PRIMARY KEY, username VARCHAR(100) NOT NULL, hash VARCHAR(256) NOT NULL, salt VARCHAR(64) NOT NULL)',
   'CREATE TABLE IF NOT EXISTS mp_settings (id TINYINT PRIMARY KEY, start_day TINYINT NOT NULL DEFAULT 5)',
   'CREATE TABLE IF NOT EXISTS mp_menus (id INT PRIMARY KEY AUTO_INCREMENT, data JSON NOT NULL)',
@@ -49,6 +52,22 @@ app.post('/api/login',authLimit,async(req,res)=>{
 app.post('/api/logout',(req,res)=>req.session.destroy(()=>{res.clearCookie('connect.sid');res.json({ok:true});}));
 app.use('/api',(req,res,next)=>req.session.user?next():res.status(401).json({error:'Meld je aan om verder te gaan.'}));
 app.get('/api/data',async(req,res)=>{const [menus]=await pool.query('SELECT * FROM mp_menus ORDER BY id DESC');const [plan]=await pool.query("SELECT DATE_FORMAT(day,'%Y-%m-%d') AS day,data FROM mp_plan");const [[settings]]=await pool.query('SELECT start_day FROM mp_settings WHERE id=1');res.json({menus:menus.map(r=>({id:r.id,...decode(r.data)})),plan:Object.fromEntries(plan.map(r=>[r.day,decode(r.data)])),startDay:settings.start_day});});
+app.get('/api/shopping',async(req,res)=>{const [[row]]=await pool.query('SELECT data FROM mp_shopping WHERE id=1');res.json(decode(row.data));});
+app.post('/api/shopping',async(req,res)=>{
+  const conn=await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [[row]]=await conn.query('SELECT data FROM mp_shopping WHERE id=1 FOR UPDATE');
+    let plan={};
+    if(req.body.type==='importPlan') {
+      const [rows]=await conn.query("SELECT DATE_FORMAT(day,'%Y-%m-%d') AS day,data FROM mp_plan");
+      plan=Object.fromEntries(rows.map(r=>[r.day,decode(r.data)]));
+    }
+    const result=updateShopping(decode(row.data),req.body,plan);
+    await conn.execute('UPDATE mp_shopping SET data=? WHERE id=1',[JSON.stringify(result)]);
+    await conn.commit();res.json(result);
+  }catch(e){await conn.rollback();throw e;}finally{conn.release();}
+});
 app.put('/api/settings',async(req,res)=>{if(!Number.isInteger(req.body.startDay)||req.body.startDay<0||req.body.startDay>6)return res.status(400).json({error:'Ongeldige startdag.'});await pool.execute('UPDATE mp_settings SET start_day=? WHERE id=1',[req.body.startDay]);res.json({ok:true});});
 app.post('/api/menus',async(req,res)=>{const data=menu(req.body);const [result]=await pool.execute('INSERT INTO mp_menus (data) VALUES (?)',[JSON.stringify(data)]);res.json({id:result.insertId,...data});});
 app.put('/api/menus/:id',async(req,res)=>{const data=menu(req.body);await pool.execute('UPDATE mp_menus SET data=? WHERE id=?',[JSON.stringify(data),req.params.id]);res.json({ok:true});});
@@ -64,5 +83,5 @@ app.post('/api/plan',async(req,res)=>{
 app.use('/api',(req,res)=>res.status(404).json({error:'Onbekende API-route.'}));
 app.use(express.static('dist'));
 app.get('/{*path}',(req,res)=>res.sendFile('index.html',{root:'dist'}));
-app.use((error,req,res,next)=>{console.error(error);res.status(error.status || (error.message?.startsWith('Geef')||error.message?.startsWith('Ongeldige menu')||error.message?.startsWith('De ingevoerde')?400:500)).json({error:error.status===400?'Ongeldig verzoek.':error.message?.startsWith('Geef')||error.message?.startsWith('Ongeldige menu')||error.message?.startsWith('De ingevoerde')?error.message:'Opslaan of laden mislukt. Probeer opnieuw.'});});
+app.use((error,req,res,next)=>{console.error(error);res.status(error.status || (error.message?.startsWith('Geef')||error.message?.startsWith('Ongeldige menu')||error.message?.startsWith('De ingevoerde')?400:500)).json({error:error.status===400?error.message:error.message?.startsWith('Geef')||error.message?.startsWith('Ongeldige menu')||error.message?.startsWith('De ingevoerde')?error.message:'Opslaan of laden mislukt. Probeer opnieuw.'});});
 app.listen(Number(process.env.PORT || 3000),'0.0.0.0',()=>console.log('Menuplanning gestart.'));

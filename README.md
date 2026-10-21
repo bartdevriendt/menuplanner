@@ -46,7 +46,9 @@ De container is stateless: account, sessies, menu’s, instelling en planning st
 
 - Eén maaltijd per dag; elk catalogusmenu wordt bij inplannen gekopieerd.
 - Vul per menu ingrediënten in bij Slager en Supermarkt, één ingrediënt per regel zonder hoeveelheden. Ze worden meegekopieerd naar de planning en kunnen daar ook per maaltijd worden aangepast.
-- De knop Boodschappenlijst in de planning toont beide winkels voor precies de zichtbare 14 dagen, alfabetisch en met het aantal maaltijden per ingrediënt (bijvoorbeeld 3× rijst). Hoofdletters en dubbele vermeldingen binnen één maaltijd veranderen de telling niet. Ingrediënten kun je in het geopende lijstje afvinken; vinkjes worden niet opgeslagen.
+- De knop Boodschappenlijst in de planning toont beide winkels voor precies de zichtbare 14 dagen, alfabetisch en met het aantal maaltijden per ingrediënt (bijvoorbeeld 3× rijst). Hoofdletters en dubbele vermeldingen binnen één maaltijd veranderen de telling niet. Dit overzicht is een tijdelijke voorvertoning. Gebruik Kopiëren naar winkellijsten om de ingrediënten op de bewaarde boodschappenlijsten te zetten.
+- Via Boodschappen maak je eigen winkels aan en kies je een standaardwinkel. De eerste winkel wordt automatisch standaard. Voeg producten toe, verplaats ze met de winkelkeuze naast het product en vink aan wat in je winkelkar zit. Deze gegevens worden in MySQL bewaard.
+- Kopiëren vanuit de tweeweeksplanner voegt onbekende ingrediënten toe aan de standaardwinkel. Bekende ingrediënten blijven bij hun winkel en krijgen opnieuw de status niet in winkelkar. Hoofdletters en overtollige spaties leveren geen dubbele producten op. Zonder winkel vraagt de module eerst om een winkel aan te maken; daarna bevestig je het kopiëren.
 - Bestaande menu’s en geplande maaltijden hebben aanvankelijk geen ingrediënten. Vul geplande kopieën via Bewerk in de planning aan; wijzigingen in de catalogus veranderen bestaande kopieën niet.
 - Slepen of een doeldatum kiezen verplaatst een maaltijd. Een bezette doeldag wisselt beide maaltijden; de database verwerkt beide wijzigingen in één transactie.
 - Bewerk naam, onderdelen en bereidingswijze met Opslaan/Annuleren. Via de maaltijdtitel kun je details openen en een kopie als nieuw catalogusmenu opslaan.
@@ -61,3 +63,5 @@ Test de MySQL-verbinding, accountaanmaak en login via de echte HTTPS-proxy. Cont
 
 De vijf tests van `npm test` en de React-productiebuild zijn succesvol uitgevoerd, zowel lokaal (tests) als tijdens de Docker-build. Het image is gepubliceerd naar `192.168.3.11:32769/menuplanning:latest`. De database-integratie en HTTPS-proxy moeten nog op de deploymentomgeving worden gecontroleerd.
 
+
+De boodschappenmodule is lokaal gecontroleerd met 12 geslaagde tests en een succesvolle productiebuild. De nieuwe tabel `mp_shopping` wordt bij het starten van de server automatisch aangemaakt. De database- en browserintegratie moeten nog op de draaiende omgeving worden gecontroleerd.
