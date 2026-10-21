@@ -45,6 +45,9 @@ De container is stateless: account, sessies, menu’s, instelling en planning st
 ## Gedrag
 
 - Eén maaltijd per dag; elk catalogusmenu wordt bij inplannen gekopieerd.
+- Vul per menu ingrediënten in bij Slager en Supermarkt, één ingrediënt per regel zonder hoeveelheden. Ze worden meegekopieerd naar de planning en kunnen daar ook per maaltijd worden aangepast.
+- De knop Boodschappenlijst in de planning toont beide winkels voor precies de zichtbare 14 dagen, alfabetisch en met het aantal maaltijden per ingrediënt (bijvoorbeeld 3× rijst). Hoofdletters en dubbele vermeldingen binnen één maaltijd veranderen de telling niet. Ingrediënten kun je in het geopende lijstje afvinken; vinkjes worden niet opgeslagen.
+- Bestaande menu’s en geplande maaltijden hebben aanvankelijk geen ingrediënten. Vul geplande kopieën via Bewerk in de planning aan; wijzigingen in de catalogus veranderen bestaande kopieën niet.
 - Slepen of een doeldatum kiezen verplaatst een maaltijd. Een bezette doeldag wisselt beide maaltijden; de database verwerkt beide wijzigingen in één transactie.
 - Bewerk naam, onderdelen en bereidingswijze met Opslaan/Annuleren. Via de maaltijdtitel kun je details openen en een kopie als nieuw catalogusmenu opslaan.
 - Verwijderen, vervangen en verplaatsen zijn 12 seconden ongedaan te maken. Dit herstel vervalt bij herladen of een volgende wijziging.
